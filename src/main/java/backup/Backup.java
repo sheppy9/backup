@@ -11,18 +11,21 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Scanner;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Backup {
-	private static final String className = Backup.class.getSimpleName();
-	private static final DateTimeFormatter folderFormat = DateTimeFormatter.ofPattern("yyyyMMMdd hhmmss");
+
+	private static final String VERSION = "1.1";
+	private static final String CLASS_NAME = Backup.class.getSimpleName();
+	private static final DateTimeFormatter FOLDER_FORMAT = DateTimeFormatter.ofPattern("yyyyMMMdd hhmmss");
 
 	public static void main(String[] args) {
-		System.out.println("##### Starting " + className + " #####\n");
+		print("##### Starting ", CLASS_NAME, " v", VERSION, " #####\n");
 
-		try {
-			Scanner scanner = new Scanner(new File("config.csv"));
+		try (Scanner scanner = new Scanner(new File("config.csv"));) {
 			scanner.nextLine();
-			String now = LocalDateTime.now().format(folderFormat);
+			String now = LocalDateTime.now().format(FOLDER_FORMAT);
 
 			while (scanner.hasNext()) {
 				String[] line = scanner.nextLine().split(",");
@@ -31,12 +34,27 @@ public class Backup {
 
 				Files.createDirectories(target);
 				Files.copy(source, target.resolve(source.getFileName()));
-				System.out.println("Backing up '" + source + "' to '" + target + "'");
+				print("Backing up '" + source + "' to '" + target + "'");
 			}
 		} catch (IOException e) {
-			System.out.println("Backup failed!");
+			while (true) {
+				print("Backup failed! ", e.getMessage());
+				sleep(5000);
+			}
 		}
 
-		System.out.println("\n##### " + className + " completed #####");
+		print("\n##### " + CLASS_NAME + " completed #####");
+	}
+
+	private static void print(Object... objs) {
+		System.out.println(Stream.of(objs).map(Object::toString).collect(Collectors.joining()));
+	}
+
+	private static void sleep(long count) {
+		try {
+			Thread.sleep(count);
+		} catch (Exception e) {
+			print("Failed to delay ", count, " milli-seconds");
+		}
 	}
 }
